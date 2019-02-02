@@ -123,8 +123,8 @@ public class OrToolsSolver implements Solver {
 	private void setConstraints(List<Constraint> constraints) {
 		for (Constraint constraint : constraints) {
 			final Range<Double> bounds = getBounds(constraint);
-			final MPConstraint c = solver.makeConstraint(asOrToolsBound(bounds.lowerEndpoint()),
-					asOrToolsBound(bounds.upperEndpoint()), constraint.getDescription());
+			final MPConstraint c = solver.makeConstraint(bounds.lowerEndpoint(), bounds.upperEndpoint(),
+					constraint.getDescription());
 			final SumTerms lhs = constraint.getLhs();
 			for (Term term : lhs) {
 				final Variable variable = term.getVariable();
@@ -193,12 +193,10 @@ public class OrToolsSolver implements Solver {
 				x = solver.makeBoolVar(variable.getDescription());
 				break;
 			case INT_KIND:
-				x = solver.makeIntVar(asOrToolsBound(bounds.lowerEndpoint()), asOrToolsBound(bounds.upperEndpoint()),
-						variable.getDescription());
+				x = solver.makeIntVar(bounds.lowerEndpoint(), bounds.upperEndpoint(), variable.getDescription());
 				break;
 			case REAL_KIND:
-				x = solver.makeNumVar(asOrToolsBound(bounds.lowerEndpoint()), asOrToolsBound(bounds.upperEndpoint()),
-						variable.getDescription());
+				x = solver.makeNumVar(bounds.lowerEndpoint(), bounds.upperEndpoint(), variable.getDescription());
 				break;
 			default:
 				throw new AssertionError();
@@ -206,20 +204,6 @@ public class OrToolsSolver implements Solver {
 			varsToOrBuilder.put(variable, x);
 		}
 		varsToOr = varsToOrBuilder.build();
-	}
-
-	private double asOrToolsBound(double bound) {
-		final double infinity = MPSolver.infinity();
-		if (Double.isFinite(bound)) {
-			return bound;
-		}
-		if (Double.NEGATIVE_INFINITY == bound) {
-			return -infinity;
-		}
-		if (Double.POSITIVE_INFINITY == bound) {
-			return infinity;
-		}
-		throw new IllegalArgumentException();
 	}
 
 	public static Range<Double> getBounds(Constraint constraint) {
