@@ -37,6 +37,19 @@ public class OrToolsSolver implements Solver {
 	@SuppressWarnings("unused")
 	private static final Logger LOGGER = LoggerFactory.getLogger(OrToolsSolver.class);
 
+	public static Range<Double> getBounds(Constraint constraint) {
+		switch (constraint.getOperator()) {
+		case EQ:
+			return FiniteRange.closed(constraint.getRhs(), constraint.getRhs());
+		case GE:
+			return FiniteRange.atLeast(constraint.getRhs());
+		case LE:
+			return FiniteRange.atMost(constraint.getRhs());
+		default:
+			throw new AssertionError();
+		}
+	}
+
 	private MPSolver solver;
 
 	private ImmutableBiMap<Variable, MPVariable> varsToOr;
@@ -96,21 +109,10 @@ public class OrToolsSolver implements Solver {
 		return result;
 	}
 
-	private ImmutableMap<Variable, Double> getSolutionValues() {
-		final ImmutableMap.Builder<Variable, Double> valuesBuilder = ImmutableMap.builder();
-		for (Variable variable : varsToOr.keySet()) {
-			final MPVariable orVariable = varsToOr.get(variable);
-			final double value = orVariable.solutionValue();
-			valuesBuilder.put(variable, value);
-		}
-		final ImmutableMap<Variable, Double> values = valuesBuilder.build();
-		return values;
-	}
-
 	private void init(IMP mp) {
 		LOGGER.info("Loading native library jniortools (using {}).", System.getProperty("java.library.path"));
 		System.loadLibrary("jniortools");
-
+	
 		final OptimizationProblemType type;
 		if (mp.getDimension().getIntegerDomainsCount() >= 1) {
 			type = OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING;
@@ -118,68 +120,6 @@ public class OrToolsSolver implements Solver {
 			type = OptimizationProblemType.GLOP_LINEAR_PROGRAMMING;
 		}
 		solver = new MPSolver(mp.getName(), type);
-	}
-
-	private void setConstraints(List<Constraint> constraints) {
-		for (Constraint constraint : constraints) {
-			final Range<Double> bounds = getBounds(constraint);
-			final MPConstraint c = solver.makeConstraint(bounds.lowerEndpoint(), bounds.upperEndpoint(),
-					constraint.getDescription());
-			final SumTerms lhs = constraint.getLhs();
-			for (Term term : lhs) {
-				final Variable variable = term.getVariable();
-				final MPVariable orVar = varsToOr.get(variable);
-				c.setCoefficient(orVar, term.getCoefficient());
-			}
-		}
-	}
-
-	private void setObjective(Objective objective) {
-		if (!objective.isZero()) {
-			final MPObjective orObjective = solver.objective();
-
-			final Sense sense = objective.getSense();
-			switch (sense) {
-			case MAX:
-				orObjective.setMaximization();
-				break;
-			case MIN:
-				orObjective.setMinimization();
-				break;
-			default:
-				throw new AssertionError();
-			}
-
-			final SumTerms function = objective.getFunction();
-			for (Term term : function) {
-				final Variable variable = term.getVariable();
-				final MPVariable orVar = varsToOr.get(variable);
-				orObjective.setCoefficient(orVar, term.getCoefficient());
-			}
-		}
-
-	}
-
-	private ResultStatus transformResultStatus(com.google.ortools.linearsolver.MPSolver.ResultStatus orResult) {
-		final ResultStatus rs;
-		switch (orResult) {
-		case ABNORMAL:
-		case NOT_SOLVED:
-		case FEASIBLE:
-			throw new SolverException();
-		case OPTIMAL:
-			rs = ResultStatus.OPTIMAL;
-			break;
-		case INFEASIBLE:
-			rs = ResultStatus.INFEASIBLE;
-			break;
-		case UNBOUNDED:
-			rs = ResultStatus.UNBOUNDED;
-			break;
-		default:
-			throw new AssertionError();
-		}
-		return rs;
 	}
 
 	private void setVariables(List<Variable> variables) {
@@ -206,17 +146,77 @@ public class OrToolsSolver implements Solver {
 		varsToOr = varsToOrBuilder.build();
 	}
 
-	public static Range<Double> getBounds(Constraint constraint) {
-		switch (constraint.getOperator()) {
-		case EQ:
-			return FiniteRange.closed(constraint.getRhs(), constraint.getRhs());
-		case GE:
-			return FiniteRange.atLeast(constraint.getRhs());
-		case LE:
-			return FiniteRange.atMost(constraint.getRhs());
+	private void setConstraints(List<Constraint> constraints) {
+		for (Constraint constraint : constraints) {
+			final Range<Double> bounds = getBounds(constraint);
+			final MPConstraint c = solver.makeConstraint(bounds.lowerEndpoint(), bounds.upperEndpoint(),
+					constraint.getDescription());
+			final SumTerms lhs = constraint.getLhs();
+			for (Term term : lhs) {
+				final Variable variable = term.getVariable();
+				final MPVariable orVar = varsToOr.get(variable);
+				c.setCoefficient(orVar, term.getCoefficient());
+			}
+		}
+	}
+
+	private void setObjective(Objective objective) {
+		if (!objective.isZero()) {
+			final MPObjective orObjective = solver.objective();
+	
+			final Sense sense = objective.getSense();
+			switch (sense) {
+			case MAX:
+				orObjective.setMaximization();
+				break;
+			case MIN:
+				orObjective.setMinimization();
+				break;
+			default:
+				throw new AssertionError();
+			}
+	
+			final SumTerms function = objective.getFunction();
+			for (Term term : function) {
+				final Variable variable = term.getVariable();
+				final MPVariable orVar = varsToOr.get(variable);
+				orObjective.setCoefficient(orVar, term.getCoefficient());
+			}
+		}
+	
+	}
+
+	private ResultStatus transformResultStatus(com.google.ortools.linearsolver.MPSolver.ResultStatus orResult) {
+		final ResultStatus rs;
+		switch (orResult) {
+		case ABNORMAL:
+		case NOT_SOLVED:
+		case FEASIBLE:
+			throw new SolverException();
+		case OPTIMAL:
+			rs = ResultStatus.OPTIMAL;
+			break;
+		case INFEASIBLE:
+			rs = ResultStatus.INFEASIBLE;
+			break;
+		case UNBOUNDED:
+			rs = ResultStatus.UNBOUNDED;
+			break;
 		default:
 			throw new AssertionError();
 		}
+		return rs;
+	}
+
+	private ImmutableMap<Variable, Double> getSolutionValues() {
+		final ImmutableMap.Builder<Variable, Double> valuesBuilder = ImmutableMap.builder();
+		for (Variable variable : varsToOr.keySet()) {
+			final MPVariable orVariable = varsToOr.get(variable);
+			final double value = orVariable.solutionValue();
+			valuesBuilder.put(variable, value);
+		}
+		final ImmutableMap<Variable, Double> values = valuesBuilder.build();
+		return values;
 	}
 
 }
