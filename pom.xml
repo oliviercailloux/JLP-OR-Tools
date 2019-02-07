@@ -11,7 +11,7 @@
 	<artifactId>jlp-or-tools</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>JLP solver wrapping Google OR-Tools for Java</name>
-	<url>http://github.com/oliviercailloux/jlp-or-tools</url>
+	<url>http://github.com/oliviercailloux/JLP-OR-Tools</url>
 	<scm>
 		<connection>scm:git:git://github.com/oliviercailloux/JLP-OR-Tools.git</connection>
 		<developerConnection>scm:git:ssh://github.com/oliviercailloux/JLP-OR-Tools.git</developerConnection>
