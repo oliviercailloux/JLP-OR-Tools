@@ -17,7 +17,7 @@ import com.google.ortools.linearsolver.MPSolver.OptimizationProblemType;
 import com.google.ortools.linearsolver.MPVariable;
 
 import io.github.oliviercailloux.jlp.elements.Constraint;
-import io.github.oliviercailloux.jlp.elements.FiniteRange;
+import io.github.oliviercailloux.jlp.elements.RangeOfDouble;
 import io.github.oliviercailloux.jlp.elements.Objective;
 import io.github.oliviercailloux.jlp.elements.Sense;
 import io.github.oliviercailloux.jlp.elements.SumTerms;
@@ -40,11 +40,11 @@ public class OrToolsSolver implements Solver {
 	public static Range<Double> getBounds(Constraint constraint) {
 		switch (constraint.getOperator()) {
 		case EQ:
-			return FiniteRange.closed(constraint.getRhs(), constraint.getRhs());
+			return RangeOfDouble.closed(constraint.getRhs(), constraint.getRhs());
 		case GE:
-			return FiniteRange.atLeast(constraint.getRhs());
+			return RangeOfDouble.atLeast(constraint.getRhs());
 		case LE:
-			return FiniteRange.atMost(constraint.getRhs());
+			return RangeOfDouble.atMost(constraint.getRhs());
 		default:
 			throw new AssertionError();
 		}
