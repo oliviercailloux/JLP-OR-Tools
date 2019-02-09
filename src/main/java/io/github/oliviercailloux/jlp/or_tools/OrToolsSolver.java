@@ -17,8 +17,8 @@ import com.google.ortools.linearsolver.MPSolver.OptimizationProblemType;
 import com.google.ortools.linearsolver.MPVariable;
 
 import io.github.oliviercailloux.jlp.elements.Constraint;
-import io.github.oliviercailloux.jlp.elements.RangeOfDouble;
 import io.github.oliviercailloux.jlp.elements.Objective;
+import io.github.oliviercailloux.jlp.elements.RangeOfDouble;
 import io.github.oliviercailloux.jlp.elements.Sense;
 import io.github.oliviercailloux.jlp.elements.SumTerms;
 import io.github.oliviercailloux.jlp.elements.Term;
@@ -92,7 +92,8 @@ public class OrToolsSolver implements Solver {
 		final long end = System.nanoTime();
 		final long lengthNs = end - start;
 		final long wallTimeSinceStartedSolverMs = solver.wallTime();
-		assert wallTimeSinceStartedSolverMs * 1_000_000 > lengthNs : String
+		/** first one could be rounded down! */
+		assert (wallTimeSinceStartedSolverMs + 1) * 1_000_000 > lengthNs : String
 				.format("Wall time (ms): %d, length (ns): %d", wallTimeSinceStartedSolverMs, lengthNs);
 		final ComputationTime time = ComputationTime.ofWallTime(Duration.of(lengthNs, ChronoUnit.NANOS));
 
@@ -112,7 +113,7 @@ public class OrToolsSolver implements Solver {
 	private void init(IMP mp) {
 		LOGGER.info("Loading native library jniortools (using {}).", System.getProperty("java.library.path"));
 		System.loadLibrary("jniortools");
-	
+
 		final OptimizationProblemType type;
 		if (mp.getDimension().getIntegerDomainsCount() >= 1) {
 			type = OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING;
@@ -163,7 +164,7 @@ public class OrToolsSolver implements Solver {
 	private void setObjective(Objective objective) {
 		if (!objective.isZero()) {
 			final MPObjective orObjective = solver.objective();
-	
+
 			final Sense sense = objective.getSense();
 			switch (sense) {
 			case MAX:
@@ -175,7 +176,7 @@ public class OrToolsSolver implements Solver {
 			default:
 				throw new AssertionError();
 			}
-	
+
 			final SumTerms function = objective.getFunction();
 			for (Term term : function) {
 				final Variable variable = term.getVariable();
@@ -183,7 +184,7 @@ public class OrToolsSolver implements Solver {
 				orObjective.setCoefficient(orVar, term.getCoefficient());
 			}
 		}
-	
+
 	}
 
 	private ResultStatus transformResultStatus(com.google.ortools.linearsolver.MPSolver.ResultStatus orResult) {
