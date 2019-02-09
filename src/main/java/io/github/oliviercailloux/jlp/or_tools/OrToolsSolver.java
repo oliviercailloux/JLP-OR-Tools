@@ -56,10 +56,13 @@ public class OrToolsSolver implements Solver {
 
 	private Configuration configuration;
 
+	private boolean libraryLoaded;
+
 	public OrToolsSolver() {
 		solver = null;
 		varsToOr = null;
 		configuration = Configuration.defaultConfiguration();
+		libraryLoaded = false;
 	}
 
 	@Override
@@ -111,8 +114,11 @@ public class OrToolsSolver implements Solver {
 	}
 
 	private void init(IMP mp) {
-		LOGGER.info("Loading native library jniortools (using {}).", System.getProperty("java.library.path"));
-		System.loadLibrary("jniortools");
+		if (!libraryLoaded) {
+			LOGGER.info("Loading native library jniortools (using {}).", System.getProperty("java.library.path"));
+			System.loadLibrary("jniortools");
+			libraryLoaded = true;
+		}
 
 		final OptimizationProblemType type;
 		if (mp.getDimension().getIntegerDomainsCount() >= 1) {
