@@ -9,7 +9,7 @@
 		<version>0.0.1</version>
 	</parent>
 	<artifactId>jlp-or-tools</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.2-SNAPSHOT</version>
 	<name>JLP solver wrapping Google OR-Tools for Java</name>
 	<url>http://github.com/oliviercailloux/JLP-OR-Tools</url>
 	<scm>
