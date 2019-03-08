@@ -95,7 +95,7 @@ public class OrToolsSolver implements Solver {
 		final long end = System.nanoTime();
 		final long lengthNs = end - start;
 		final long wallTimeSinceStartedSolverMs = solver.wallTime();
-		/** first one could be rounded down! */
+		/** First one could be rounded down! */
 		assert (wallTimeSinceStartedSolverMs + 1) * 1_000_000 > lengthNs : String
 				.format("Wall time (ms): %d, length (ns): %d", wallTimeSinceStartedSolverMs, lengthNs);
 		final ComputationTime time = ComputationTime.ofWallTime(Duration.of(lengthNs, ChronoUnit.NANOS));
@@ -156,8 +156,14 @@ public class OrToolsSolver implements Solver {
 	private void setConstraints(List<Constraint> constraints) {
 		for (Constraint constraint : constraints) {
 			final Range<Double> bounds = getBounds(constraint);
-			final MPConstraint c = solver.makeConstraint(bounds.lowerEndpoint(), bounds.upperEndpoint(),
-					constraint.getDescription());
+			/**
+			 * For now, we disable passing the constraint name. That’s because an
+			 * undocumented “feature” of Google OR-Tools makes it crash (jvm terminates)
+			 * when two constraints are added with the same non empty description, which is
+			 * allowed in an IMP. We’d need to check duplicate names and rename constraints.
+			 */
+			final MPConstraint c = solver.makeConstraint(bounds.lowerEndpoint(), bounds.upperEndpoint());
+			LOGGER.debug("Added: {}.", constraint);
 			final SumTerms lhs = constraint.getLhs();
 			for (Term term : lhs) {
 				final Variable variable = term.getVariable();
